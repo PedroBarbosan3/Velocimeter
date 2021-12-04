@@ -49,7 +49,6 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 osThreadId defaultTaskHandle;
-TaskHandle_t pontTaskHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -81,6 +80,7 @@ uint8_t txData[13] = "Hello World\r\n";
 #define RX_QUEUE_SIZE 5
 #define USART_1 1
 #define USART_2 2
+extern void frear();
 
 QueueHandle_t tx_queue_1;
 QueueHandle_t rx_queue_1;
@@ -89,14 +89,6 @@ QueueHandle_t rx_queue_2;
 SemaphoreHandle_t uart_1_mutex = NULL;
 SemaphoreHandle_t uart_2_mutex = NULL;
 
-// TIMER
-
-int tempo;
-int pwm_value = 0;
-uint16_t temp;
-
-int power = 0;
-int generator = 0;
 
 void sendchar(char c, char usart){
 	if(usart == USART_1){
@@ -136,83 +128,53 @@ uint16_t read_voltageDUO(void) {
 	return input;
 }
 
-
-
-//void pontUNO(){
-//	char buff1[13];
-//	uint16_t temp = read_voltageUNO();
-//	sprintf(buff1,"%d\r\n", temp);
-//	sendString(buff1, USART_2);
-//}
-
 uint16_t temp1 = 0;
 uint16_t temp2 = 0;
+uint16_t count = 0;
+uint16_t tempS = 0;
+uint16_t pwm_value = 0;
 
 void pont(void * vParam){
-	//char buff1[13];
 	while(1){
-		temp1 = read_voltageUNO();
-		temp2 = read_voltageDUO();
+		if(count == 0){
+			temp1 = read_voltageUNO();
+			temp2 = read_voltageDUO();
+	        if(pwm_value < 7500)
+	        {
+	            TIM2->CCR2 = pwm_value;
+	            tempS += temp1+temp2;
+	            pwm_value = tempS;
+	        }
+	        if(pwm_value > 0)
+	        {
+	            TIM2->CCR2 = pwm_value;
+	            tempS -= temp1+temp2;
+	            pwm_value = tempS;
+	        }
+		}
+		else
+		{
+			temp1 = 0;
+			temp2 = 0;
+		}
 	}
-//	sprintf(buff1,"%d\r\n", temp);
-//	sendString(buff1, USART_2);
 }
 
-//void pontDUO(void * vParam){
-//	char buff2[13];
-//	while(1){
-//		temp2 = read_voltageDUO();
-//	}
-//	sprintf(buff1,"%d\r\n", temp);
-//	sendString(buff1, USART_2);
-//}
+//retirar essa função no final
 
 void print_scanner(){
 	char buff1[26];
-	//uint16_t tempS = temp1+temp2;
 	sprintf(buff1,"%d\r\n", temp1 + temp2);
 	sendString(buff1, USART_2);
 }
 
-//void pontDUO(){
-//	char buff2[13];
-//	uint16_t temp = read_voltageDUO();
-//	sprintf(buff2,"%d\r\n", temp);
-//	sendString(buff2,USART_2);
-//}
 
-void ledOff(){
-	vTaskSuspend(pontTaskHandle);
-	temp1 = 0;
-	temp2 = 0;
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+void ligarCarro(){
+	//retirar o sendString no final
+	sendString("carro ligado\r\n",USART_2);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+    count = 0;
 }
-
-void ledOn(){
-	vTaskResume(pontTaskHandle);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-    sendString("led ligada\r\n",USART_2);
-}
-
-//void geradorOn(){
-//	generator = TRUE;
-//	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-//	sendString("gerador ligado\r\n", USART_2);
-//	temp = read_voltage();
-//	pwm_value += temp;
-//	if(pwm_value < 65535){
-//		TIM2->CCR2 = pwm_value;
-//	}
-//	if(pwm_value > 65535 ){
-//		pwm_value = 0;
-//	}
-//}
-
-//void geradorOff(){
-//	generator = FALSE;
-//    sendString("gerador desligado\r\n", USART_2);
-//    HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
-//}
 
 char readchar(char usart){
 	uint8_t caracter=0;
@@ -222,6 +184,8 @@ char readchar(char usart){
 		xQueueReceive(rx_queue_2, &caracter, HAL_MAX_DELAY);
 	return caracter;
 }
+
+//ver se essa função pode ter uso, senão tiver, retirar ela
 
 //void voltage_scanner(void * vParam) {
 //	uint16_t potentiometer_buff;
@@ -246,26 +210,6 @@ char readchar(char usart){
 //}
 
 
-void pressButton(void * vParam) {
-	uint16_t count = 0;
-//		if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == 1){
-//			count += 1;
-//			break;
-//		}
-//		if(count != 0){
-//			vTaskSuspend(pontTaskHandle);
-//			temp1 = 0;
-//			temp2 = 0;
-//			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-//			count = 0;
-//			break;
-//		}
-		if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == 1){
-
-			sendString("entrou\r\n",USART_2);
-		}
-}
-
 void cli(void * vParam)
 {
     uint8_t caracter;
@@ -276,24 +220,11 @@ void cli(void * vParam)
             case 's':
                 print_scanner();
                 break;
-//            case 'c':
-//                pontDUO();
-//                break;
-            case 'l':
-                ledOff();
+            case 'a':
+                ligarCarro();
                 break;
-            case 'f':
-                ledOn();
-                break;
-//            case 'a' :
-//                geradorOn();
-//                break;
-//            case 'b':
-//                geradorOff();
-//                break;
-		}
-    }
-	//caracter = '\0';
+            }
+        }
 }
 
 void USART_2_IRQHandler(void)
@@ -448,22 +379,8 @@ int main(void)
  			  configMINIMAL_STACK_SIZE,   /* tamanho da pilha da task */
  			  NULL,       /* parametro para a task */
  			  1,          /* nivel de prioridade */
-			  &pontTaskHandle);      /* ponteiro para o handle da task */
-//  xTaskCreate(pontDUO,    /* Nome da funcao que contem a task */
-//   		  	  "pontDUO",     /* Nome descritivo */
-// 			  configMINIMAL_STACK_SIZE,   /* tamanho da pilha da task */
-// 			  NULL,       /* parametro para a task */
-// 			  1,          /* nivel de prioridade */
-// 			  NULL);      /* ponteiro para o handle da task */
-
-
-
-  xTaskCreate(pressButton,    /* Nome da funcao que contem a task */
-   		  	  "pressButton",     /* Nome descritivo */
- 			  configMINIMAL_STACK_SIZE,   /* tamanho da pilha da task */
- 			  NULL,       /* parametro para a task */
- 			  1,          /* nivel de prioridade */
 			  NULL);      /* ponteiro para o handle da task */
+
 
   /* USER CODE END RTOS_THREADS */
 
@@ -696,7 +613,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 127;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
+  htim2.Init.Period = 8000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -934,9 +851,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PC13 PC1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : PC13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -946,6 +863,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
@@ -988,10 +909,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
-  /* USER CODE BEGIN Callback 1 */
-
-  /* USER CODE END Callback 1 */
 }
+  /* USER CODE BEGIN Callback 1 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+  {
+      if(GPIO_Pin == GPIO_PIN_13) // If The INT Source Is EXTI Line9 (A9 Pin)
+      {
+    	  count +=1;
+    	  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+
+    	  //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+      }
+  }
+  /* USER CODE END Callback 1 */
+
 
 /**
   * @brief  This function is executed in case of error occurrence.
