@@ -160,6 +160,12 @@ void pont(void * vParam){
 	}
 }
 
+void send_value(uint16_t value) {
+	char buff1[26];
+	sprintf(buff1,"%d\r\n", value);
+	sendString(buff1, USART_1);
+}
+
 //retirar essa função no final
 
 void print_scanner(){
@@ -172,6 +178,7 @@ void print_scanner(){
 void ligarCarro(){
 	//retirar o sendString no final
 	sendString("carro ligado\r\n",USART_2);
+	send_value(0);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
     count = 0;
 }
@@ -219,6 +226,7 @@ void cli(void * vParam)
             switch(caracter){
             case 's':
                 print_scanner();
+                send_value(temp1 + temp2);
                 break;
             case 'a':
                 ligarCarro();
