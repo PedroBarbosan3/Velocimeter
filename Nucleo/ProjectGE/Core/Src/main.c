@@ -135,6 +135,7 @@ uint16_t tempS = 0;
 uint16_t pwm_value = 0;
 
 void pont(void * vParam){
+	char buff1[26];
 	while(1){
 		if(count == 0){
 			temp1 = read_voltageUNO();
@@ -157,21 +158,23 @@ void pont(void * vParam){
 			temp1 = 0;
 			temp2 = 0;
 		}
+		sprintf(buff1,"%d\r\n", temp1 + temp2);
+		sendString(buff1, USART_1);
 	}
 }
 
 //retirar essa função no final
 
-void print_scanner(){
-	char buff1[26];
-	sprintf(buff1,"%d\r\n", temp1 + temp2);
-	sendString(buff1, USART_2);
-}
+//void print_scanner(){
+//	char buff1[26];
+//	sprintf(buff1,"%d\r\n", temp1 + temp2);
+//	sendString(buff1, USART_2);
+//}
 
 
 void ligarCarro(){
 	//retirar o sendString no final
-	sendString("carro ligado\r\n",USART_2);
+	//sendString("carro ligado\r\n",USART_2);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
     count = 0;
 }
@@ -215,11 +218,11 @@ void cli(void * vParam)
     uint8_t caracter;
         while(1)
         {
-            caracter = readchar(USART_2);
+            caracter = readchar(USART_1);
             switch(caracter){
-            case 's':
-                print_scanner();
-                break;
+//            case 's':
+//                print_scanner();
+//                break;
             case 'a':
                 ligarCarro();
                 break;
