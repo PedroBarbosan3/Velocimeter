@@ -195,7 +195,7 @@ void loop()
     client.print(fbdo.to<int>());
     client.println("</span>u/s</div>\
           <form action='/reset' method='post'>\
-            <button style='background: #2a2b2c; border-radius: 8px; padding: 12px; cursor: pointer; color: #fff; border: none;'>Reiniciar</button>\
+            <button style='background: #2a2b2c; border-radius: 8px; padding: 12px; cursor: pointer; color: #fff; border: none;'>Ligar carrro</button>\
           </form>\
         </div>\
         ");
