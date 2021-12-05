@@ -128,43 +128,40 @@ uint16_t read_voltageDUO(void) {
 	return input;
 }
 
-uint16_t base_vel = 0;
-uint16_t acceleration = 0;
-uint16_t carro_ligado = 0;
+uint16_t temp1 = 0;
+uint16_t temp2 = 0;
+uint16_t count = 0;
 uint16_t tempS = 0;
 uint16_t pwm_value = 0;
-uint16_t velocity = 0;
-
-void step_vel() {
-	uint16_t increase = acceleration/5000;
-	velocity += base_vel * (1 + increase);
-	if(velocity > 7500) {
-		velocity = 7500;
-	}
-	send_value(velocity);
-}
 
 void pont(void * vParam){
 	int cycle_count = 100000;
 
 	while(1){
-		if(carro_ligado == 1){
-			base_vel = read_voltageUNO();
-			acceleration = read_voltageDUO();
-	        if(pwm_value <= 7500)
+		if(count == 0){
+			temp1 = read_voltageUNO();
+			temp2 = read_voltageDUO();
+	        if(pwm_value < 7500)
 	        {
-	            pwm_value = velocity;
 	            TIM2->CCR2 = pwm_value;
+	            tempS += temp1+temp2;
+	            pwm_value = tempS;
+	        }
+	        if(pwm_value > 0)
+	        {
+	            TIM2->CCR2 = pwm_value;
+	            tempS -= temp1+temp2;
+	            pwm_value = tempS;
 	        }
 		}
 		else
 		{
-			base_vel = 0;
-			acceleration = 0;
+			temp1 = 0;
+			temp2 = 0;
 		}
 
-		if(cycle_count == 0) {
-			step_vel();
+		if(!cycle_count) {
+			send_value(temp1 + temp2);
 			cycle_count = 100000;
 		} else {
 			cycle_count--;
@@ -182,18 +179,9 @@ void send_value(uint16_t value) {
 void ligarCarro(){
 	//retirar o sendString no final
 	sendString("carro ligado\r\n",USART_2);
-	velocity = 0;
-	send_value(velocity);
+	send_value(0);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-	carro_ligado = 1;
-}
-
-void frearCarro(){
-	if(carro_ligado == 1) {
-		sendString("Pé no freio!\r\n",USART_2);
-		velocity = base_vel;
-		send_value(velocity);
-	}
+    count = 0;
 }
 
 char readchar(char usart){
@@ -211,13 +199,8 @@ void input(void * vParam)
         while(1)
         {
             caracter = readchar(USART_2);
-          switch(caracter){
-            case 'f':
-            	frearCarro();
-			break;
-            case 'a':
+            if(caracter == 'a') {
                 ligarCarro();
-			break;
             }
         }
 }
@@ -910,7 +893,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   {
       if(GPIO_Pin == GPIO_PIN_13) // If The INT Source Is EXTI Line9 (A9 Pin)
       {
-    	  carro_ligado -= 1;
+    	  count +=1;
     	  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
 
     	  //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
