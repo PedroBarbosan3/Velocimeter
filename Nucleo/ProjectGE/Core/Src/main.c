@@ -135,6 +135,8 @@ uint16_t tempS = 0;
 uint16_t pwm_value = 0;
 
 void pont(void * vParam){
+	int cycle_count = 100000;
+
 	while(1){
 		if(count == 0){
 			temp1 = read_voltageUNO();
@@ -157,6 +159,13 @@ void pont(void * vParam){
 			temp1 = 0;
 			temp2 = 0;
 		}
+
+		if(!cycle_count) {
+			send_value(temp1 + temp2);
+			cycle_count = 100000;
+		} else {
+			cycle_count--;
+		}
 	}
 }
 
@@ -164,14 +173,6 @@ void send_value(uint16_t value) {
 	char buff1[26];
 	sprintf(buff1,"%d\r\n", value);
 	sendString(buff1, USART_1);
-}
-
-//retirar essa função no final
-
-void print_scanner(){
-	char buff1[26];
-	sprintf(buff1,"%d\r\n", temp1 + temp2);
-	sendString(buff1, USART_2);
 }
 
 
@@ -192,45 +193,14 @@ char readchar(char usart){
 	return caracter;
 }
 
-//ver se essa função pode ter uso, senão tiver, retirar ela
-
-//void voltage_scanner(void * vParam) {
-//	uint16_t potentiometer_buff;
-//	char potentiometer_result_buff[13];
-//
-//	int countdown = 1000;
-//
-//	while(TRUE) {
-//		potentiometer_buff = read_voltage();
-//		uint16_t led = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-//
-//		if(!countdown) {
-//			sprintf(potentiometer_result_buff, "%d,%d,%d,%d", potentiometer_buff, led, power, generator);
-//			sendString("[", USART_1);
-//			sendString(potentiometer_result_buff, USART_1);
-//			sendString("]\r", USART_1);
-//			countdown = 1000;
-//		} else {
-//			countdown--;
-//		}
-//	}
-//}
-
-
-void cli(void * vParam)
+void input(void * vParam)
 {
     uint8_t caracter;
         while(1)
         {
             caracter = readchar(USART_2);
-            switch(caracter){
-            case 's':
-                print_scanner();
-                send_value(temp1 + temp2);
-                break;
-            case 'a':
+            if(caracter == 'a') {
                 ligarCarro();
-                break;
             }
         }
 }
@@ -375,8 +345,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 
-  xTaskCreate(cli,    /* Nome da funcao que contem a task */
-   		  	  "cli",     /* Nome descritivo */
+  xTaskCreate(input,    /* Nome da funcao que contem a task */
+   		  	  "input",     /* Nome descritivo */
  			  configMINIMAL_STACK_SIZE,   /* tamanho da pilha da task */
  			  NULL,       /* parametro para a task */
  			  1,          /* nivel de prioridade */
