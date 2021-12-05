@@ -52,6 +52,8 @@ FirebaseAuth auth;
 /* Define the FirebaseConfig data for config data */
 FirebaseConfig config;
 
+uint8_t started = 0;
+
 /* SETUP */
 
 void setupSerial() {
@@ -99,8 +101,6 @@ void setup()
 
   // Zera a informacao no firebase
   Firebase.setInt(fbdo, "/carro/vel", 0);
-  // Manda comando de redefinicao da velocidade via serial para o nucleo.
-  SSerial.write(RESTART_SERIAL_COMMAND);
 }
 
 /* END SETUP */
@@ -108,7 +108,8 @@ void setup()
 
 void loop()
 {
-  if (SSerial.available()) {
+
+  if (SSerial.available() && started == 1) {
     char array[8];
     String s = SSerial.readString();
     s.toCharArray(array, 8);
@@ -144,6 +145,7 @@ void loop()
 
     // Manda comando de redefinicao da velocidade via serial para o nucleo.
     SSerial.write(RESTART_SERIAL_COMMAND);
+    started = 1;
 
     // Responde ao cliente com redirecionamento para o caminho raiz /
     client.println("HTTP/1.1 303 See Other");
