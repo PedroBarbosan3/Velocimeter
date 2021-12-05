@@ -188,32 +188,7 @@ char readchar(char usart){
 	return caracter;
 }
 
-//ver se essa função pode ter uso, senão tiver, retirar ela
-
-//void voltage_scanner(void * vParam) {
-//	uint16_t potentiometer_buff;
-//	char potentiometer_result_buff[13];
-//
-//	int countdown = 1000;
-//
-//	while(TRUE) {
-//		potentiometer_buff = read_voltage();
-//		uint16_t led = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-//
-//		if(!countdown) {
-//			sprintf(potentiometer_result_buff, "%d,%d,%d,%d", potentiometer_buff, led, power, generator);
-//			sendString("[", USART_1);
-//			sendString(potentiometer_result_buff, USART_1);
-//			sendString("]\r", USART_1);
-//			countdown = 1000;
-//		} else {
-//			countdown--;
-//		}
-//	}
-//}
-
-
-void cli(void * vParam)
+void input(void * vParam)
 {
     uint8_t caracter;
         while(1)
@@ -225,7 +200,6 @@ void cli(void * vParam)
 //                break;
             case 'a':
                 ligarCarro();
-                break;
             }
         }
 }
@@ -370,8 +344,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 
-  xTaskCreate(cli,    /* Nome da funcao que contem a task */
-   		  	  "cli",     /* Nome descritivo */
+  xTaskCreate(input,    /* Nome da funcao que contem a task */
+   		  	  "input",     /* Nome descritivo */
  			  configMINIMAL_STACK_SIZE,   /* tamanho da pilha da task */
  			  NULL,       /* parametro para a task */
  			  1,          /* nivel de prioridade */
