@@ -31,7 +31,7 @@ SoftwareSerial SSerial(Pin_ST_NUCLEO_RX, Pin_ST_NUCLEO_TX);
 //Provide the RTDB payload printing info and other helper functions.
 #include <addons/RTDBHelper.h>
 
-#define RESTART_SERIAL_COMMAND "S\r\n"
+#define RESTART_SERIAL_COMMAND 'a'
 
 /* 1. Define the WiFi credentials */
 #define WIFI_SSID "SSID 2G"

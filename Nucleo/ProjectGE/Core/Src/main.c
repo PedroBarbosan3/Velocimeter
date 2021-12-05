@@ -201,11 +201,7 @@ void input(void * vParam)
         while(1)
         {
             caracter = readchar(USART_1);
-            switch(caracter){
-//            case 's':
-//                print_scanner();
-//                break;
-            case 'a':
+            if(caracter == 'a') {
                 ligarCarro();
             }
         }
