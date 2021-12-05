@@ -52,12 +52,15 @@ FirebaseAuth auth;
 /* Define the FirebaseConfig data for config data */
 FirebaseConfig config;
 
-void setup()
-{
+/* SETUP */
+
+void setupSerial() {
   // Define a velocidade das portas seriais
   Serial.begin(115200);
   SSerial.begin(115200);
+}
 
+void setupWifi() {
   // Conexao com a rede wifi
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
@@ -73,7 +76,9 @@ void setup()
   Serial.print("IP para se conectar ao NodeMCU: "); 
   Serial.print("http://"); 
   Serial.println(WiFi.localIP()); //ESCREVE NA SERIAL O IP RECEBIDO DENTRO DA REDE SEM FIO (O IP NESSA PRTICA  RECEBIDO DE FORMA AUTOMTICA)
+}
 
+void setupFirebase() {
   Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
 
   /* Assign the database URL and database secret(required) */
@@ -82,14 +87,24 @@ void setup()
 
   Firebase.reconnectWiFi(true);
 
-  /* Initialize the library with the Firebase authen and config */
+  /* Initialize the library with the Firebase auth and config */
   Firebase.begin(&config, &auth);
+}
+
+void setup()
+{
+  setupSerial();
+  setupWifi();
+  setupFirebase();
 
   // Zera a informacao no firebase
   Firebase.setInt(fbdo, "/carro/vel", 0);
-  // Manda caracter 'S' via serial para o nucleo. Comando de redefinicao da velocidade.
+  // Manda comando de redefinicao da velocidade via serial para o nucleo.
   SSerial.write(RESTART_SERIAL_COMMAND);
 }
+
+/* END SETUP */
+/* MAIN */
 
 void loop()
 {
@@ -127,7 +142,7 @@ void loop()
     // Manda informacao para o firebase. Resetando velocidade
     Firebase.setInt(fbdo, "/carro/vel", 0);
 
-    // Manda a caracter 'S' via serial para o nucleo
+    // Manda comando de redefinicao da velocidade via serial para o nucleo.
     SSerial.write(RESTART_SERIAL_COMMAND);
 
     // Responde ao cliente com redirecionamento para o caminho raiz /
@@ -194,3 +209,5 @@ void loop()
   Serial.println("Conexão HTTP encerrada"); //ESCREVE O TEXTO NA SERIAL
   Serial.println(""); //PULA UMA LINHA NA JANELA SERIAL
 }
+
+/* END MAIN */
