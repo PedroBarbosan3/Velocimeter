@@ -136,6 +136,7 @@ uint16_t pwm_value = 0;
 
 void pont(void * vParam){
 	char buff1[26];
+	int cycle_count = 100000;
 	while(1){
 		if(count == 0){
 			temp1 = read_voltageUNO();
@@ -158,8 +159,14 @@ void pont(void * vParam){
 			temp1 = 0;
 			temp2 = 0;
 		}
-		sprintf(buff1,"%d\r\n", temp1 + temp2);
-		sendString(buff1, USART_1);
+
+		if(cycle_count == 0) {
+			sprintf(buff1,"%d\r\n", temp1 + temp2);
+			sendString(buff1, USART_1);
+			cycle_count=100000;
+		} else {
+			cycle_count--;
+		}
 	}
 }
 
